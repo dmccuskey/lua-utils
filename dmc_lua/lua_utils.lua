@@ -69,8 +69,8 @@ local Utils = {} -- Utils object
 -- @param method the method to call
 --
 function Utils.createObjectCallback( object, method )
-	assert( object ~= nil, "missing object in Utils.createObjectCallback" )
-	assert( method ~= nil, "missing method in Utils.createObjectCallback" )
+	assert( object, "dmc_utils.createObjectCallback: missing object" )
+	assert( method, "dmc_utils.createObjectCallback: missing method" )
 	--==--
 	return function( ... )
 		return method( object, ... )
