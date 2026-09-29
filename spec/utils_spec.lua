@@ -40,7 +40,7 @@ end
 describe( "lua_utils", function()
 
 	it( "exports its version", function()
-		assert.are.equal( '0.3.0', Utils.__version )
+		assert.are.equal( '0.3.1', Utils.__version )
 	end)
 
 	it( "leaks no globals", function()
@@ -218,6 +218,16 @@ describe( "strings", function()
 		assert.are.equal( 'x', Utils.stringFormatting( 'x' ) )
 		assert.are.equal( 'a=1', Utils.stringFormatting( 'a=%s', 1 ) )
 		assert.are.equal( '1 2', Utils.stringFormatting( '%s %s', { 1, 2 } ) )
+	end)
+
+	it( "stringFormatting() passes the values after a nil", function()
+		local values = {}
+		values[1], values[3] = 1, 3 -- #values is 1
+		local format, count = string.format, nil
+		string.format = function( fmt, ... ) count = select( '#', ... ) return fmt end
+		Utils.stringFormatting( '%s %s %s', values )
+		string.format = format
+		assert.are.equal( 3, count )
 	end)
 
 end)
