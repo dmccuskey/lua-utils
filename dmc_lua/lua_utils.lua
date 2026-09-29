@@ -39,7 +39,7 @@ SOFTWARE.
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "0.2.0"
+local VERSION = "0.3.0"
 
 
 
@@ -51,9 +51,12 @@ local slower = string.lower
 
 local tconcat = table.concat
 local tinsert = table.insert
+local unpack = unpack or table.unpack
 
 
 local Utils = {} -- Utils object
+
+Utils.__version = VERSION
 
 
 
@@ -101,7 +104,10 @@ end
 --[[
 
 	Given a UNIX time (seconds), split that duration into number of weeks, days, etc
-	eg, { months=0, weeks=2, days=3, hours=8, minutes=35, seconds=21 }
+	eg, { weeks=2, days=3, hours=8, minutes=35, seconds=21 }
+	params.weeks turns weeks on; params.days, .hours, .minutes (on by
+	default) turn the others off with false, and the next smaller unit
+	holds their time
 
 --]]
 
@@ -121,9 +127,9 @@ function Utils.calcTimeBreakdown( seconds, params )
 	seconds = math.abs( seconds )
 
 	params = params or {}
-	params.days = params.days or true
-	params.hours = params.hours or true
-	params.minutes = params.minutes or true
+	local use_days = params.days ~= false
+	local use_hours = params.hours ~= false
+	local use_minutes = params.minutes ~= false
 
 	local result, tmp = {}, { 0, seconds }
 
@@ -134,19 +140,19 @@ function Utils.calcTimeBreakdown( seconds, params )
 	end
 
 	result.days = 0
-	if params.days and tmp[2] >= day_s then
+	if use_days and tmp[2] >= day_s then
 		tmp = diff( tmp[2], day_s )
 		result.days = tmp[1]
 	end
 
 	result.hours = 0
-	if params.hours and tmp[2] >= hour_s then
+	if use_hours and tmp[2] >= hour_s then
 		tmp = diff( tmp[2], hour_s )
 		result.hours = tmp[1]
 	end
 
 	result.minutes = 0
-	if params.minutes and tmp[2] >= min_s then
+	if use_minutes and tmp[2] >= min_s then
 		tmp = diff( tmp[2], min_s )
 		result.minutes = tmp[1]
 	end
@@ -209,8 +215,7 @@ function Utils.getUniqueRandom( include, exclude )
 	local pruned_list = {}
 	local item
 
-
-	math.randomseed( os.time() )
+	-- the caller seeds the generator (math.randomseed), once
 
 	-- process as normal if no exclusions
 	if #exclude == 0 then
@@ -310,7 +315,7 @@ function Utils.destroy( table )
 
 	if type( table ) ~= "table" then return end
 
-	function _destroy( t )
+	local function _destroy( t )
 		for k,v in pairs( t ) do
 			if type( t[ k ] ) == "table" then
 				_destroy( t[ k ] )
@@ -339,7 +344,7 @@ function Utils.extend( fromTable, toTable )
 	if not fromTable or not toTable then
 		error( "table can't be nil" )
 	end
-	function _extend( fT, tT )
+	local function _extend( fT, tT )
 
 		for k,v in pairs( fT ) do
 
@@ -395,10 +400,10 @@ function Utils.print( table, include, exclude, params )
 	local options = {
 		limit = 10,
 	}
-	opts = Utils.extend( params, options )
+	Utils.extend( params, options )
 
 	--print("Printing object table =============================")
-	function _print( t, ind, s )
+	local function _print( t, ind, s )
 
 		-- limit number of rounds
 		if s > options.limit then return end
@@ -554,15 +559,16 @@ function Utils.createHttpRequest( params )
 	-- print( "Utils.createHttpRequest")
 	params = params or {}
 	--==--
-	local http_params = params.http_params
+	local http_params = params.http_params or {}
+	local sformat = string.format
 	local req_t = {
-		"%s / HTTP/1.1" % params.method,
-		"Host: %s" % params.host,
+		sformat( "%s %s HTTP/1.1", params.method, params.path or '/' ),
+		sformat( "Host: %s", params.host ),
 	}
 
 	if type( http_params.headers ) == 'table' then
 		for k,v in pairs( http_params.headers ) do
-			tinsert( req_t, #req_t+1, "%s:%s" % { k, v } )
+			tinsert( req_t, #req_t+1, sformat( "%s:%s", k, v ) )
 		end
 	end
 
@@ -583,10 +589,13 @@ function Utils.normalizeHeaders( headers, params )
 	--==--
 	local h = {}
 	local f
-	if false and params.case == 'camel' then
-		f = nil -- TODO
+	if params.case == 'camel' then
+		-- eg, 'content-type' -> 'Content-Type'
+		f = function( k )
+			return ( slower( k ):gsub( "%f[%w]%l", string.upper ) )
+		end
 	else
-		f = string.lower
+		f = slower
 	end
 
 	for k,v in pairs( headers ) do
@@ -633,8 +642,9 @@ function Utils.parseQuery( str )
 
 	local t = {}
 	if str ~= nil then
+		local decode = Utils.urlDecode
 		for k, v in string.gmatch( str, "([^=&]+)=([^=&]+)") do
-			t[k] = v
+			t[ decode( k ) ] = decode( v )
 		end
 	end
 	return t
@@ -653,7 +663,7 @@ function Utils.createQuery( tbl )
 	local str = ''
 	for k,v in pairs( tbl ) do
 		if str ~= '' then str = str .. '&' end
-		str = str .. tostring( k ) .. '=' .. encode( tostring(v) )
+		str = str .. encode( tostring(k) ) .. '=' .. encode( tostring(v) )
 	end
 	return str
 end

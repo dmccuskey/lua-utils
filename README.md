@@ -80,7 +80,7 @@ To update, pull the repository again (`git -C lua-utils pull`).
 
 ## Functions
 
-All are called on the module, `Utils.name( ... )`. "Array" means a table with keys `1..n`.
+All are called on the module, `Utils.name( ... )`. "Array" means a table with keys `1..n`. The module's version is `Utils.__version` (`0.3.0`).
 
 ### Tables
 
@@ -104,10 +104,10 @@ All are called on the module, `Utils.name( ... )`. "Array" means a table with ke
 | `split( str, sep )` | An array of the pieces of `str` between separators. `sep` is a set of characters, as in a Lua pattern's `[...]` (default: whitespace); empty pieces are dropped (`'a,,b'` gives two). |
 | `stringFormatting( fmt, values )` | `string.format( fmt, ... )` with `values` as one value or an array of them. The same function is lua-patch's `%` operator for strings. |
 | `urlEncode( str )`, `urlDecode( str )` | Form encoding: spaces become `+`, other characters except letters, digits and `-_.~` become `%XX`, a newline `%0D%0A`. Decoding reverses it. |
-| `createQuery( t )` | `k1=v1&k2=v2` from a table, the values URL-encoded (the keys not), in `pairs()` order. |
-| `parseQuery( str )` | A table from `k1=v1&k2=v2`. The values are not decoded. |
-| `normalizeHeaders( headers )` | A copy of the table with every key in lower case. |
-| `createHttpRequest( params )` | The text of an HTTP request: `params.method`, `params.host`, `params.http_params.headers` and `.body`. Needs lua-patch's `string-format` patch; see [Known Issues](#known-issues). |
+| `createQuery( t )` | `k1=v1&k2=v2` from a table, keys and values URL-encoded, in `pairs()` order. |
+| `parseQuery( str )` | A table from `k1=v1&k2=v2`, keys and values URL-decoded; pairs with an empty key or value are dropped. `parseQuery( createQuery( t ) )` gives back `t` (as strings). |
+| `normalizeHeaders( headers, params )` | A copy of the table with every key in lower case, or with `params.case='camel'` each word capitalized (`Content-Type`). |
+| `createHttpRequest( params )` | The text of an HTTP request: `params.method`, `params.path` (default `/`), `params.host`, and the optional `params.http_params.headers` and `.body`. |
 | `hexDump( str )` | Writes `str` to standard output as a hex dump, 16 bytes a line with their text. |
 
 ### Callbacks
@@ -121,29 +121,29 @@ All are called on the module, `Utils.name( ... )`. "Array" means a table with ke
 
 | function | does |
 |---|---|
-| `calcTimeBreakdown( seconds, params )` | A table `{ weeks, days, hours, minutes, seconds }` for a duration. Weeks only with `params.weeks=true`; otherwise days hold them. |
+| `calcTimeBreakdown( seconds, params )` | A table `{ weeks, days, hours, minutes, seconds }` for a duration. Weeks only with `params.weeks=true`; otherwise days hold them. `params.days`, `.hours` or `.minutes` set to `false` leave that unit at 0 and its time in the next smaller one. |
 | `imageScale( box, image, params )` | The scale for an image (`width`, `height`) against a box (the same). `params.bind='outside'` (default) covers the box, cropping; `'inside'` fits the image in it. |
-| `getUniqueRandom( include, exclude )` | A random item of the array `include` that isn't in the array `exclude`; `nil` (with a warning) when none is left. |
+| `getUniqueRandom( include, exclude )` | A random item of the array `include` that isn't in the array `exclude`; `nil` (with a warning) when none is left. Uses `math.random()`: seed it once in your program (`math.randomseed()`) for different picks on each run. |
 
 ## In Solar2D
 
 [dmc-utils](https://github.com/dmccuskey/dmc-utils) builds on this module, adding functions for Solar2D (audio channels, device checks, the status bar). The DMC Solar2D libraries load lua-utils itself as `lib.dmc_lua.lua_utils` from their `dmc_corona/lib/dmc_lua/` folder, part of [DMC-Lua-Library](https://github.com/dmccuskey/DMC-Lua-Library).
 
-## Known Issues
-
-- **Some options can't be turned off.** `calcTimeBreakdown()` sets `days`, `hours` and `minutes` with `params.x or true`, so `false` is ignored. Its comment promises `months`, which it doesn't compute.
-- **`createHttpRequest()` errors unless lua-patch's `string-format` patch is on** (`attempt to perform arithmetic on a string value`): it formats with the `%` operator. It also always requests `/` (no path parameter) and errors without `params.http_params`.
-- **Leaked globals**: `destroy()`, `extend()` and `print()` define their helpers `_destroy`, `_extend` and `_print` as globals, and `print()` also sets `opts`.
-- `getUniqueRandom()` reseeds the random generator with `os.time()` on every call, so calls in the same second give the same item, and it changes the sequence for the rest of the program.
-- `normalizeHeaders()` accepts `params.case='camel'`, but only lower case is written.
-- `parseQuery()` doesn't decode, and `createQuery()` doesn't encode the keys; `parseQuery( createQuery( t ) )` doesn't return `t` for values with spaces or symbols.
-- `stringFormatting()` uses the global `unpack`: Lua 5.1 (and LuaJIT) only.
-- The version, `0.2.0`, isn't exported: it's a local in the file.
-- No tests.
-
 ## Development
 
 Only `dmc_lua/lua_utils.lua` is written here. [DMC-Lua-Library](https://github.com/dmccuskey/DMC-Lua-Library) copies it into its `dmc_lua/` with its Snakemake build (the `Snakefile` here registers it; lua-files lists it as a requirement), and the DMC Solar2D libraries copy it from there into `dmc_corona/lib/dmc_lua/`.
+
+Some modules keep a copy of a function from here, between `--== Start: copy from lua_utils ==--` and `--== End: copy from lua_utils ==--`, so they load without lua-utils. A fix to one of these functions goes into the copies too:
+
+- `createObjectCallback()`: lua-events-mixin (`lua_events_mix.lua`)
+- `stringFormatting()`: lua-patch (`lua_patch.lua`)
+- `extend()`: the Solar2D modules of dmc-autostore, dmc-bytearray, dmc-dragdrop, dmc-e4x, dmc-error, dmc-events-mixin, dmc-megaphone, dmc-objects, dmc-patch, dmc-path, dmc-performance, dmc-promise and dmc-states-mixin
+
+The tests are in `spec/utils_spec.lua`, for [busted](https://lunarmodules.github.io/busted/) under Lua 5.1. From the repository's root folder:
+
+```sh
+busted spec
+```
 
 ## License
 
