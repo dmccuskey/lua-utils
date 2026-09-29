@@ -1,7 +1,7 @@
 --====================================================================--
 -- lua_utils.lua
 --
--- Documentation: http://docs.davidmccuskey.com/display/docs/lua_utils.lua
+-- Documentation: https://github.com/dmccuskey/lua-utils
 --====================================================================--
 
 --[[
