@@ -80,7 +80,7 @@ To update, pull the repository again (`git -C lua-utils pull`).
 
 ## Functions
 
-All are called on the module, `Utils.name( ... )`. "Array" means a table with keys `1..n`. The module's version is `Utils.__version` (`0.3.0`).
+All are called on the module, `Utils.name( ... )`. "Array" means a table with keys `1..n`. The module's version is `Utils.__version` (`0.3.1`).
 
 ### Tables
 
@@ -102,7 +102,7 @@ All are called on the module, `Utils.name( ... )`. "Array" means a table with ke
 | function | does |
 |---|---|
 | `split( str, sep )` | An array of the pieces of `str` between separators. `sep` is a set of characters, as in a Lua pattern's `[...]` (default: whitespace); empty pieces are dropped (`'a,,b'` gives two). |
-| `stringFormatting( fmt, values )` | `string.format( fmt, ... )` with `values` as one value or an array of them. The same function is lua-patch's `%` operator for strings. |
+| `stringFormatting( fmt, values )` | `string.format( fmt, ... )` with `values` as one value or an array of them (a `nil` in the array is passed on, not the end of it). The same function is lua-patch's `%` operator for strings. |
 | `urlEncode( str )`, `urlDecode( str )` | Form encoding: spaces become `+`, other characters except letters, digits and `-_.~` become `%XX`, a newline `%0D%0A`. Decoding reverses it. |
 | `createQuery( t )` | `k1=v1&k2=v2` from a table, keys and values URL-encoded, in `pairs()` order. |
 | `parseQuery( str )` | A table from `k1=v1&k2=v2`, keys and values URL-decoded; pairs with an empty key or value are dropped. `parseQuery( createQuery( t ) )` gives back `t` (as strings). |

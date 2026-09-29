@@ -39,7 +39,7 @@ SOFTWARE.
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "0.3.0"
+local VERSION = "0.3.1"
 
 
 
@@ -284,6 +284,15 @@ function Utils.split( str, sep )
 end
 
 
+-- the highest positive integer key: #t may stop at a nil hole
+local maxn = table.maxn or function( t )
+	local n = 0
+	for k in pairs( t ) do
+		if type(k)=='number' and k>n and k%1==0 then n = k end
+	end
+	return n
+end
+
 -- stringFormatting()
 -- implement Python-style string replacement
 -- http://lua-users.org/wiki/StringInterpolation
@@ -292,7 +301,7 @@ function Utils.stringFormatting( a, b )
 	if not b then
 		return a
 	elseif type(b) == "table" then
-		return string.format(a, unpack(b))
+		return string.format(a, unpack(b, 1, maxn(b)))
 	else
 		return string.format(a, b)
 	end
