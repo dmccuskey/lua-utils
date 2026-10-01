@@ -137,7 +137,7 @@ Some modules keep a copy of a function from here, between `--== Start: copy from
 
 - `createObjectCallback()`: lua-events-mixin (`lua_events_mix.lua`)
 - `stringFormatting()`: lua-patch (`lua_patch.lua`)
-- `extend()`: the Solar2D modules of dmc-autostore, dmc-bytearray, dmc-dragdrop, dmc-objects and dmc-promise
+- `extend()`: the Solar2D modules of dmc-autostore, dmc-bytearray, dmc-dragdrop and dmc-objects
 
 The tests are in `spec/utils_spec.lua`, for [busted](https://lunarmodules.github.io/busted/) under Lua 5.1. From the repository's root folder:
 
